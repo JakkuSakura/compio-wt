@@ -2,7 +2,12 @@
 name = "compio-wt"
 version = "0.1.0"
 edition = "2021"
-description = "WebTransport for compio-quic — adapted from web-transport-quinn"
+description = "WebTransport for compio-quic — server-side HTTP/3 CONNECT handshake"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/SakuraCapital/compio-wt"
+authors = ["SakuraCapital"]
+keywords = ["webtransport", "quic", "http3", "compio"]
+categories = ["network-programming", "web-programming"]
 
 [dependencies]
 bytes = "1"
