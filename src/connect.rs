@@ -16,7 +16,7 @@ pub async fn server_accept(
     let settings = read_settings(&mut recv).await?;
     write_settings(&mut send, &settings).await?;
     let request = read_connect_request(&mut recv).await?;
-    let response = ConnectResponse::accept();
+    let response = ConnectResponse::default();
     write_connect_response(&mut send, &response).await?;
     Ok((request, response))
 }
@@ -102,7 +102,7 @@ async fn write_connect_response(
     response: &ConnectResponse,
 ) -> Result<(), ServerError> {
     let mut buf = BytesMut::new();
-    response.encode(&mut buf).map_err(|e| ServerError::Connect(e))?;
+    response.encode(&mut buf).map_err(ServerError::Connect)?;
     write_frame(send, Frame::HEADERS.0, &buf).await.map_err(|e| ServerError::Write(e))
 }
 
