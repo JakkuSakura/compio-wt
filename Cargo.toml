@@ -18,6 +18,7 @@ thiserror = "2"
 futures = "0.3"
 
 compio-quic = { version = "0.8.0", features = ["webpki-roots"] }
+compio = { version = "0.19", features = ["bytes"] }
 rustls = { version = "0.23", default-features = false, features = ["std"] }
 rustls-pki-types = "1"
 web-transport-proto = "0.6"
