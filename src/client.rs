@@ -73,7 +73,8 @@ pub async fn connect_with_client_config(
         .open_bi()
         .map_err(|e| ClientError::Write(format!("open_bi: {e}")))?;
 
-    let (_request, _response) = client_connect(&conn, send, recv, url).await?;
+    let request = web_transport_proto::ConnectRequest::new(url.clone());
+    let _response = client_connect(&conn, send, recv, &request).await?;
 
     Ok(Session::new(conn))
 }

@@ -9,11 +9,11 @@ use compio::buf::bytes::Bytes;
 use crate::error::{ClientError, ServerError};
 
 pub async fn server_accept(
-    conn: &compio_quic::Connection,
+    _conn: &compio_quic::Connection,
     mut send: compio_quic::SendStream,
     mut recv: compio_quic::RecvStream,
 ) -> Result<(ConnectRequest, ConnectResponse), ServerError> {
-    let settings = read_settings(&mut recv).await.map_err(|e| ClientError::Connect(web_transport_proto::ConnectError::UnexpectedFrame(Frame(VarInt::from_u32(0)))))?;
+    let settings = read_settings(&mut recv).await?;
     write_settings(&mut send, &settings).await.map_err(|e| ServerError::Write(e))?;
     let request = read_connect_request(&mut recv).await?;
     let response = ConnectResponse::default();
@@ -22,15 +22,15 @@ pub async fn server_accept(
 }
 
 pub async fn client_connect(
-    conn: &compio_quic::Connection,
+    _conn: &compio_quic::Connection,
     mut send: compio_quic::SendStream,
     mut recv: compio_quic::RecvStream,
     request: &ConnectRequest,
 ) -> Result<ConnectResponse, ClientError> {
     write_settings(&mut send, &Settings::default()).await.map_err(|e| ClientError::Write(e))?;
-    read_settings(&mut recv).await.map_err(|e| ClientError::Connect(web_transport_proto::ConnectError::UnexpectedFrame(Frame(VarInt::from_u32(0)))))?;
-    write_connect_request(&mut send, request).await?;
-    let response = read_connect_response(&mut recv).await?;
+    read_settings(&mut recv).await?;
+    write_connect_request(&mut send, request).await.map_err(|e| ClientError::Write(e))?;
+    let response = read_connect_response(&mut recv).await.map_err(|e| ClientError::Read(e))?;
     Ok(response)
 }
 
@@ -47,7 +47,7 @@ async fn read_settings(recv: &mut compio_quic::RecvStream) -> Result<Settings, S
             web_transport_proto::ConnectError::UnexpectedFrame(Frame(typ)),
         ));
     }
-    Settings::decode(&mut &payload[..]).map_err(ServerError::from)
+    Settings::decode(&mut &payload[..]).map_err(|_| ServerError::Settings("settings decode error".into()))
 }
 
 async fn read_frame(recv: &mut compio_quic::RecvStream) -> Result<(VarInt, Vec<u8>), String> {
@@ -145,11 +145,11 @@ async fn read_exact_slice(recv: &mut compio_quic::RecvStream, buf: &mut [u8]) ->
     let mut filled = 0;
     while filled < len {
         let remaining = len - filled;
-        let mut chunk = Bytes::from(vec![0u8; remaining.min(65536)]);
-        match recv.read_chunks(&mut [chunk]).await.map_err(|e| format!("read: {e:?}"))? {
+        let mut bufs = vec![Bytes::from(vec![0u8; remaining.min(65536)])];
+        match recv.read_chunks(&mut bufs).await.map_err(|e| format!("read: {e:?}"))? {
             Some(_) => {
-                let n = chunk.len().min(remaining);
-                buf[filled..filled + n].copy_from_slice(&chunk[..n]);
+                let n = bufs[0].len().min(remaining);
+                buf[filled..filled + n].copy_from_slice(&bufs[0][..n]);
                 filled += n;
             }
             None => return Err("stream ended early".into()),

@@ -50,6 +50,20 @@ pub enum ClientError {
     Write(String),
 }
 
+impl From<ServerError> for ClientError {
+    fn from(e: ServerError) -> Self {
+        match e {
+            ServerError::Connection(e) => ClientError::Connection(e),
+            ServerError::Rustls(e) => ClientError::Rustls(e),
+            ServerError::Io(e) => ClientError::Io(e),
+            ServerError::Connect(e) => ClientError::Connect(e),
+            ServerError::Settings(e) => ClientError::Settings(e),
+            ServerError::Read(e) => ClientError::Read(e),
+            ServerError::Write(e) => ClientError::Write(e),
+        }
+    }
+}
+
 #[derive(Error, Debug, Clone)]
 pub enum SessionError {
     #[error("connection lost: {0}")]
