@@ -13,7 +13,7 @@ pub async fn server_accept(
     mut send: compio_quic::SendStream,
     mut recv: compio_quic::RecvStream,
 ) -> Result<(ConnectRequest, ConnectResponse), ServerError> {
-    let settings = read_settings(&mut recv).await.map_err(|e| ClientError::Connect(web_transport_proto::ConnectError::UnknownStream))?;
+    let settings = read_settings(&mut recv).await.map_err(|e| ClientError::Connect(web_transport_proto::ConnectError::UnexpectedFrame(Frame(VarInt::from_u32(0)))))?;
     write_settings(&mut send, &settings).await.map_err(|e| ServerError::Write(e))?;
     let request = read_connect_request(&mut recv).await?;
     let response = ConnectResponse::default();
@@ -28,7 +28,7 @@ pub async fn client_connect(
     request: &ConnectRequest,
 ) -> Result<ConnectResponse, ClientError> {
     write_settings(&mut send, &Settings::default()).await.map_err(|e| ClientError::Write(e))?;
-    read_settings(&mut recv).await.map_err(|e| ClientError::Connect(web_transport_proto::ConnectError::UnknownStream))?;
+    read_settings(&mut recv).await.map_err(|e| ClientError::Connect(web_transport_proto::ConnectError::UnexpectedFrame(Frame(VarInt::from_u32(0)))))?;
     write_connect_request(&mut send, request).await?;
     let response = read_connect_response(&mut recv).await?;
     Ok(response)
