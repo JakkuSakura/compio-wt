@@ -4,11 +4,13 @@
 //! `compio_quic` instead of `quinn`. Provides HTTP/3 WebTransport CONNECT handshake over a
 //! compio_quic endpoint, yielding a [`Session`] that exposes bidirectional streams and datagrams.
 
+mod client;
 mod connect;
 mod error;
 mod server;
 mod session;
 
+pub use client::{connect, connect_with_client_config};
 pub use error::*;
 pub use server::*;
 pub use session::*;
